@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  api:
+    image: mystery:api-${APP_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: docker/api.dockerfile
+    ports:
+      - ${PORT_APP_HTTP:-10001}:80
+      - ${PORT_APP_HTTPS:-10002}:443
+    volumes:
+      - ./service/api/:/app:delegated
+
+

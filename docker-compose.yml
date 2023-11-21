@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  ui:
+    image: node:20-alpine3.17
+    expose:
+      - 3000
+    user: node
+    working_dir: /home/node/app
+    ports:
+      - ${PORT_UI:-3000}:3000
+    command: /bin/sh -c "yarn && yarn run dev"
+    volumes:
+      - ./service/ui/:/home/node/app:delegated
+    depends_on:
+      - api
+
+  api:
+    image: mystery:api-${APP_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: docker/api.dockerfile
+    environment:
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-3306}
+    ports:
+      - ${PORT_API_HTTP:-10001}:80
+      - ${PORT_API_HTTPS:-10002}:443
+    volumes:
+      - ./service/api/:/app:delegated
+    depends_on:
+      - db
+      - mailcatcher
+
+  db:
+    image: mysql:8.1
+    volumes:
+      - ./docker/runtime/db:/var/lib/mysql:delegated
+    ports:
+      - ${DB_OUTER_PORT:-13306}:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-secret}
+      - MYSQL_DATABASE=${DB_DATABASE:-mystery}
+
+  mailcatcher:
+    image: schickling/mailcatcher
+    ports:
+      - 1080:1080
